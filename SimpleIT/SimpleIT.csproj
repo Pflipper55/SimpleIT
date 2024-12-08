@@ -11,10 +11,5 @@
   <ItemGroup>
     <PackageReference Include="CliFx" Version="2.3.5" />
   </ItemGroup>
-
-
-  <ItemGroup>
-    <Folder Include="UnitConversions\" />
-  </ItemGroup>
   
 </Project>

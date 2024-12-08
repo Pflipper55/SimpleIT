@@ -7,6 +7,7 @@ namespace SimpleIT
         public static async Task<int> Main() =>
             await new CliApplicationBuilder()
                 .AddCommandsFromThisAssembly()
+                .AllowDebugMode()
                 .Build()
                 .RunAsync();
     }

@@ -7,7 +7,7 @@ using System.Net;
 
 namespace SimpleIT.Networking.Commands
 {
-    [Command("subnetting", Description = "Calculates new subnets (IPv4)")]
+    [Command("subnetting-ipv4", Description = "Calculates new subnets (IPv4)")]
     public class IPv4SubnettingCommand : ICommand
     {
         [CommandParameter(0, Description = "Given network address, to form subnets")]
