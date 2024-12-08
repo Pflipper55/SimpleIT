@@ -3,92 +3,80 @@ using CliFx.Attributes;
 using CliFx.Exceptions;
 using CliFx.Infrastructure;
 using SimpleIT.Conversions.Model.Enums;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace SimpleIT.Conversions.Commands
+namespace SimpleIT.Conversions.Commands;
+
+[Command("numbersystem-conversion", Description = "Converts number from one system to the other")]
+public class NumberSystemCommand : ICommand
 {
-    [Command("numbersystem-conversion", Description = "Converts number from one system to the other")]
-    public class NumberSystemCommand : ICommand
+    [CommandParameter(0, Description = "Value to be converted")]
+    public required string NumberValue { get; init; }    
+
+    [CommandParameter(1, Description = "Source number system")]
+    public required NumberSystems Source { get; init; }
+
+    [CommandParameter(2, Description = "Target number system")]
+    public required NumberSystems Target { get; init; }
+
+    public ValueTask ExecuteAsync(IConsole console)
     {
-        [CommandParameter(0, Description = "Value to be converted")]
-        public required string NumberValue { get; init; }    
-
-        [CommandParameter(1, Description = "Source number system")]
-        public required NumberSystems Source { get; init; }
-
-        [CommandParameter(2, Description = "Target number system")]
-        public required NumberSystems Target { get; init; }
-
-        public ValueTask ExecuteAsync(IConsole console)
+        if(Source == Target)
         {
-            var resultString = string.Empty;
-            switch(Source)
-            {
-                case NumberSystems.BINARY:
-                    switch (Target)
-                    {
-                        case NumberSystems.BINARY:
-                            throw new CommandException("No need to convert binary to binary.");
-                        case NumberSystems.DECIMAL:
-                            resultString = this.BinaryToDecimal(NumberValue).ToString();
-                            break;
-                        case NumberSystems.HEXADECIMAL:
-                            break;
-                        default:
-                            break;
-                    }
-                    break;
-                case NumberSystems.DECIMAL:
-                    break;
-                case NumberSystems.HEXADECIMAL:
-                    break;
-                default:
-                   throw new NotImplementedException();
-            }
-
-
-            console.Output.WriteLine(string.Concat("Old Value: ", this.NumberValue));
-            console.Output.WriteLine(string.Concat("New Value: ", resultString));
-
-            return default(ValueTask);
-
+            throw new CommandException($"No need to convert {Source} to {Target}.");
         }
 
-        private string DecimalToBinary(decimal number)
+        var resultString = ConvertNumber(NumberValue, Target);
+
+        resultString = resultString.TrimStart('0');
+
+        console.Output.WriteLine(string.Concat("Old Value: ", NumberValue));
+        console.Output.WriteLine(string.Concat("New Value: ", resultString));
+
+        return default(ValueTask);
+
+    }
+
+    private string ConvertNumber(string number, NumberSystems target)
+    {
+        return target switch
         {
-            return number.ToString("B");
-        }
+            NumberSystems.BINARY => ConvertToBinary(number),
+            NumberSystems.DECIMAL => ConvertToDecimal(number),
+            NumberSystems.HEXADECIMAL => ConvertToHexadecimal(number),
+            _ => throw new CommandException($"Unsupported target number system: {target}")
+        };
+    }
 
-        private string DecimalToHexadecimal(decimal number)
-        {
-            return number.ToString("X");
-        }
+    private string ConvertToBinary(string number)
+    {
+        var parts = GetNumberParts(number);
+        var integerBinary = string.Concat(parts.Item1.Select(c => Convert.ToString(GetDigitValue(c), 2).PadLeft(4, '0')));
+        var fractionalBinary = string.Concat(parts.Item2.Select(c => Convert.ToString(GetDigitValue(c), 2).PadLeft(4, '0')));
+        return string.IsNullOrEmpty(fractionalBinary) ? integerBinary : $"{integerBinary}.{fractionalBinary}";
+    }
 
-        private decimal BinaryToDecimal(string binary)
-        {
-            var binaryParts = binary.Split(".");
-            var integerPart = binaryParts[0];
-            var fractionPart = binaryParts[1];
+    private string ConvertToDecimal(string number)
+    {
+        var parts = GetNumberParts(number);
+        var integerPart = parts.Item1.Reverse().Select((c, i) => GetDigitValue(c) * (decimal)Math.Pow((int)Source, i)).Sum();
+        var fractionPart = parts.Item2.Select((c, i) => GetDigitValue(c) * (decimal)Math.Pow((int)Source, -(i + 1))).Sum();
+        return (integerPart + fractionPart).ToString();
+    }
 
-            var integerArray = integerPart.ToCharArray().Reverse();
-            decimal integerValue = 0;
-            for(int i = 0; i < integerArray.Count(); i++)
-            {
-                integerValue += integerArray.ElementAt(i) == '1' ? (decimal)Math.Pow(2, i) : 0;
-            }
+    private string ConvertToHexadecimal(string number)
+    {
+        var parts = GetNumberParts(number);
+        var integerHex = string.Concat(parts.Item1.Select(c => GetDigitValue(c).ToString("X")));
+        var fractionalHex = string.Concat(parts.Item2.Select(c => GetDigitValue(c).ToString("X")));
+        return string.IsNullOrEmpty(fractionalHex) ? integerHex : $"{integerHex}.{fractionalHex}";
+    }
 
-            var fractionArray = fractionPart.ToCharArray();
-            for (int i = 1; i < fractionPart.Count()+1; i++)
-            {
-                var val = (decimal)Math.Pow(2, -i);
-                integerValue += fractionArray.ElementAt(i-1) == '1' ? val : 0;
-            }
+    private int GetDigitValue(char digit) => char.IsDigit(digit) ? digit - '0' : char.ToUpper(digit) - 'A' + 10;
 
-            return integerValue;
-        }
+    private Tuple<string, string> GetNumberParts(string number)
+    {
+        var parts = number.Split('.');
+        return new Tuple<string, string>(parts[0], parts.Length > 1 ? parts[1] : string.Empty);
     }
 }
