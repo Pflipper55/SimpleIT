@@ -3,7 +3,7 @@ using CliFx.Attributes;
 using CliFx.Exceptions;
 using CliFx.Infrastructure;
 using SimpleIT.Conversions.Model.Enums;
-using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace SimpleIT.Conversions.Commands;
 
@@ -24,6 +24,11 @@ public class NumberSystemCommand : ICommand
         if(Source == Target)
         {
             throw new CommandException($"No need to convert {Source} to {Target}.");
+        }
+
+        if (!IsValidNumberForBase(NumberValue))
+        {
+            throw new CommandException("The given number is not valid for the base number system");
         }
 
         var resultString = ConvertNumber(NumberValue, Target);
@@ -78,5 +83,19 @@ public class NumberSystemCommand : ICommand
     {
         var parts = number.Split('.');
         return new Tuple<string, string>(parts[0], parts.Length > 1 ? parts[1] : string.Empty);
+    }
+
+    private bool IsValidNumberForBase(string input)
+    {
+        if (Source == NumberSystems.BINARY)
+            return Regex.IsMatch(input, "^[01]+$");
+
+        if (Source == NumberSystems.HEXADECIMAL)
+            return Regex.IsMatch(input, "^[0-9A-Fa-f]+$");
+
+        if (Source == NumberSystems.DECIMAL)
+            return decimal.TryParse(input,out decimal number);
+
+        return false;
     }
 }
