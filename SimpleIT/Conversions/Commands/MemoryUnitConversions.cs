@@ -26,8 +26,17 @@ public class MemoryUnitConversions : ICommand
             throw new CommandException($"No need to convert {NumberValue} because target and source unit are the same");
         }
 
-        var byteValue = this.ToBytes(NumberValue);
-        var unitValue = this.ByteToUnit(byteValue);
+        decimal unitValue = 0;
+        if(NumberValue != 0)
+        {
+            decimal byteValue = this.ToBytes(NumberValue);
+            unitValue = this.ByteToUnit(byteValue);
+        }
+        else if(NumberValue < 0)
+        {
+            throw new CommandException("Value must be greater than zero");
+        }
+
 
         console.Output.WriteLine(string.Concat("Old Value: ", NumberValue));
         console.Output.WriteLine(string.Concat("New Value: ", unitValue));
