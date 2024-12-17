@@ -19,7 +19,6 @@ namespace SimpleIT.Networking.Commands
         [CommandParameter(2, Description = "CIDR", IsRequired = false)]
         public int Cidr { get; set; } = 0;
 
-
         public ValueTask ExecuteAsync(IConsole console)
         {
             var isParsable = IPAddress.TryParse(StartIpAddress, out var ipAddress);
@@ -57,7 +56,6 @@ namespace SimpleIT.Networking.Commands
 
             return default;
         }
-
 
         private IPAddress CalculateSubnetmask(IPAddress ipAddress, int cidr = 0)
         {
